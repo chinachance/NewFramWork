@@ -9,7 +9,10 @@ import com.google.gson.stream.JsonToken
 import com.haohao.framwork.haoframwork.utils.HttpInterceptorUtil
 import okhttp3.ResponseBody
 import retrofit2.Converter
+import java.io.ByteArrayInputStream
 import java.io.IOException
+import java.io.InputStreamReader
+import java.nio.charset.StandardCharsets
 
 /**
  * ━━━━━━神兽出没━━━━━━
@@ -58,9 +61,12 @@ public class MyGsonResponseBodyConverter<T> internal constructor(
 //            val reader = InputStreamReader(inputStream, charset)
 //            jsonReader = gson.newJsonReader(reader)
 //        }
+        //
+
         try {
             //处理token失效和显示错误信息
-            val baseBean: BaseBean = Gson().fromJson<BaseBean>(value.charStream(), BaseBean::class.java)
+            val string = value.string()
+            val baseBean: BaseBean = Gson().fromJson<BaseBean>(string, BaseBean::class.java)
             val code = baseBean.code
             val errMsg = baseBean.errMsg
             if (!StringUtils.isEmpty(code) && code.startsWith("400")) {
@@ -71,10 +77,16 @@ public class MyGsonResponseBodyConverter<T> internal constructor(
                 //网络请求报错 message不为空
                 HttpInterceptorUtil.getInstance().showErrorToast(errMsg)
             }
+            val contentType = value.contentType()
+            val charset =
+                    if (contentType == null) contentType!!.charset(StandardCharsets.UTF_8) else StandardCharsets.UTF_8
+            val inputStream = ByteArrayInputStream(string.toByteArray())
+            val reader = InputStreamReader(inputStream, charset)
+            jsonReader = gson.newJsonReader(reader)
         } catch (e: Exception) {
-            Log.e("hao","MyGsonResponseBodyConverter: ${e.toString()}")
+            Log.e("hao", "MyGsonResponseBodyConverter: ${e.toString()}")
         }
-        jsonReader = gson.newJsonReader(value.charStream())
+
         return try {
             val result = adapter.read(jsonReader)
             if (jsonReader?.peek() != JsonToken.END_DOCUMENT) {
