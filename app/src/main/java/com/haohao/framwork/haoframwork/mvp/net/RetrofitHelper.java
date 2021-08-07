@@ -1,8 +1,9 @@
 package com.haohao.framwork.haoframwork.mvp.net;
 
+import com.haohao.framwork.haoframwork.mvp.net.gsonfactory.MyGsonConverterFactory;
+
 import retrofit2.Retrofit;
 import retrofit2.adapter.rxjava2.RxJava2CallAdapterFactory;
-import retrofit2.converter.gson.GsonConverterFactory;
 
 /**
  * ━━━━━━神兽出没━━━━━━
@@ -43,7 +44,7 @@ public class RetrofitHelper {
         // 初始化Retrofit
         Retrofit retrofit = new Retrofit.Builder()
                 .baseUrl(Constant.SERVER_URL)
-                .addConverterFactory(GsonConverterFactory.create()) // json解析
+                .addConverterFactory(MyGsonConverterFactory.create()) // json解析
                 .addCallAdapterFactory(RxJava2CallAdapterFactory.create()) // 支持RxJava
                 .client(RetrofitUtils.getOkHttpClient()) //打印请求参数
                 .build();

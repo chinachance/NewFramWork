@@ -39,6 +39,7 @@ import java.util.ArrayList;
 public class HttpInterceptorUtil {
     private static HttpInterceptorUtil mInterceptorUtil;
     private Dialog mTokenDialog;
+    private long exitTime;
 
     public static HttpInterceptorUtil getInstance() {
         return mInterceptorUtil == null ? mInterceptorUtil = new HttpInterceptorUtil() : mInterceptorUtil;
@@ -48,24 +49,32 @@ public class HttpInterceptorUtil {
      * 显示token失效弹窗
      */
     public void showTokenDialog() {
+        if (mTokenDialog != null && mTokenDialog.isShowing()) {
+            return;
+        }
         ArrayList<Activity> activityStack = BaseApplication.getInstance().getActivityStack();
         Activity activity = activityStack.get(activityStack.size() - 1);
-        mTokenDialog = DialogUtil.showDialog(activity, "请登录", false,
-                new DialogUtil.OnClickListener() {
-                    @Override
-                    public void onClickConfirm() {
-                        //跳转到登录页
-                        activity.startActivity(new Intent(activity, LoginActivity.class)
-                                .putExtra("dialog", true));
-                    }
+        activity.runOnUiThread(new Runnable() {
+            @Override
+            public void run() {
+                mTokenDialog = DialogUtil.showDialog(activity, "请登录", false,
+                        new DialogUtil.OnClickListener() {
+                            @Override
+                            public void onClickConfirm() {
+                                //跳转到登录页
+                                activity.startActivity(new Intent(activity, LoginActivity.class)
+                                        .putExtra("dialog", true));
+                            }
 
-                    @Override
-                    public void onClickCancel() {
-                        //销毁页面
-                        mTokenDialog.dismiss();
-                        BaseApplication.getInstance().finishActivity(activity);
-                    }
-                });
+                            @Override
+                            public void onClickCancel() {
+                                //销毁页面
+                                mTokenDialog.dismiss();
+                                BaseApplication.getInstance().finishActivity(activity);
+                            }
+                        });
+            }
+        });
     }
 
     /**
@@ -84,6 +93,15 @@ public class HttpInterceptorUtil {
      */
     public void showErrorToast(String msg) {
         ArrayList<Activity> activityStack = BaseApplication.getInstance().getActivityStack();
-        Toast.makeText(activityStack.get(activityStack.size() - 1), msg, Toast.LENGTH_SHORT).show();
+        Activity activity = activityStack.get(activityStack.size() - 1);
+        activity.runOnUiThread(new Runnable() {
+            @Override
+            public void run() {
+                if ((System.currentTimeMillis() - exitTime) > 1000 * 30) {
+                    Toast.makeText(activity, msg, Toast.LENGTH_SHORT).show();
+                }
+                exitTime = System.currentTimeMillis();
+            }
+        });
     }
 }
